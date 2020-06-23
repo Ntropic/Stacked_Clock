@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html>
-<body style="background-color:rgb(0,0,0);">
 
-<center>
-<canvas id="myCanvas" width="1800" height="950">
-Your browser does not support the HTML5 canvas tag.
-</canvas>
-</center>
+<head>
+<title>Stacked Clock</title>
+<style>
+  * {margin: 0; padding: 0;}
+   body {background: black;}
+   canvas {display: block;}
+</style>
+</head>
+
+<body style="background-color:rgb(0,0,0);">
+<canvas id="c"></canvas>
 
 <script>
-var c = document.getElementById("myCanvas");
+var c = document.getElementById("c");
 var ctx = c.getContext("2d");
 
 //-------------------------------------------------------
@@ -94,6 +99,13 @@ ctx.fillRect(0, 0, c.width, c.height);
 setInterval(drawClock, 50);
 
 function drawClock() {
+  c.height = window.innerHeight;
+  c.width = window.innerWidth;
+  var y0=c.width/2;
+  var x0=c.height/2;
+  var x=x0+0*sizle;
+  var y=y0+1.5*sizle;
+  var sizle=Math.min(x0,y0)*factor/(l[0]+l[1]+l[2]);
   drawFace(c,cursorx,cursory,ctx,angles,x,y,x0,y0,steps,sizle,r,s2,bg_lines,bg_shade,bg_blur,main_lines,main_shade,main_blur,line_heartbeat,line_width_heartbeat);
   drawNumbers(c,cursorx,cursory,ctx,r,x0,y0,sizle,s2,steps,x,y,hour_factor,minute_factor,text_base,text_shade,text_blur,text_blur_small,text_heartbeat,width_heartbeat,line_heartbeat,line_width_heartbeat);
   drawTime(c,cursorx,cursory,ctx,angles,x0,y0,x,y,sizle,l,s2,hand,hand_shade,hand_blur,hand_thickness,line_heartbeat,line_width_heartbeat);
