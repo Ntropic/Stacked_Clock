@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<body style="background-color:rgb(0,0,0);">
+
+<center>
+<canvas id="myCanvas" width="1800" height="950">
+Your browser does not support the HTML5 canvas tag.
+</canvas>
+</center>
+
+<script>
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+
+//-------------------------------------------------------
+var factor=0.8; //Size Factor
+var hour_factor=0.125;
+var minute_factor=0.06;
+
+var bg_lines='rgb(40,40,40)';
+var bg_shade='rgb(0,0,0)';
+var bg_blur=0;
+
+var main_lines='rgb(100,100,150)';
+var main_shade='rgb(0,0,100)';
+var main_blur=10;
+var line_heartbeat=0.075;
+var line_width_heartbeat=1;
+
+var text_base='rgb(240,240,240)';
+var text_shade='rgb(0,0,150)';
+var text_blur=10;
+var text_blur_small=10;
+var text_heartbeat=0.3;
+var width_heartbeat=5.5;
+
+var hand='rgb(250,250,250)';
+var hand_shade='rgb(0,0,250)';
+var hand_blur=20;
+var hand_thickness='2.5';
+
+//-------------------------------------------------------
+
+var y0=c.width/2;
+var x0=c.height/2;
+
+var r=new Array(3);
+r[0]=12;
+r[1]=60;
+r[2]=60; 
+
+var l=new Array(3);
+l[0]=0.75;
+l[1]=0.5;
+l[2]=0.25;  
+
+var sizle=Math.min(x0,y0)*factor/(l[0]+l[1]+l[2]);
+
+var steps=new Array(3);
+steps[0]=43200;
+steps[1]=3600;
+steps[2]=60;
+
+var s2=new Array(3);
+s2[0]=1;
+s2[1]=1+1/r[0];
+s2[2]=1+steps[2]/steps[1]/r[0]+1/r[1];
+
+var x=x0+0*sizle;
+var y=y0+1.5*sizle;
+var angles=new Array(3);
+angles[0]=0;
+angles[1]=0;
+angles[2]=0;
+
+
+var cursorx=0;
+var cursory=0;
+var last_update=0;
+c.addEventListener('mousemove', e => {
+    var rect = c.getBoundingClientRect();
+    cursorx = e.clientX - rect.left;
+    cursory = e.clientY - rect.top;
+
+    var now = new Date();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+    var milli = now.getMilliseconds();  
+    last_update=hour*steps[0]/r[0]+minute*steps[1]/r[1]+(second+milli/1000)*steps[2]/r[2];
+});
+
+ctx.fillRect(0, 0, c.width, c.height);
+setInterval(drawClock, 50);
+
+function drawClock() {
+  drawFace(c,cursorx,cursory,ctx,angles,x,y,x0,y0,steps,sizle,r,s2,bg_lines,bg_shade,bg_blur,main_lines,main_shade,main_blur,line_heartbeat,line_width_heartbeat);
+  drawNumbers(c,cursorx,cursory,ctx,r,x0,y0,sizle,s2,steps,x,y,hour_factor,minute_factor,text_base,text_shade,text_blur,text_blur_small,text_heartbeat,width_heartbeat,line_heartbeat,line_width_heartbeat);
+  drawTime(c,cursorx,cursory,ctx,angles,x0,y0,x,y,sizle,l,s2,hand,hand_shade,hand_blur,hand_thickness,line_heartbeat,line_width_heartbeat);
+}
+
+function drawFace(c,cursorx,cursory,ctx,angles,x,y,x0,y0,steps,sizle,r,s2,bg_lines,bg_shade,bg_blur,main_lines,main_shade,main_blur,line_heartbeat,line_width_heartbeat) {
+    var curx=-(cursorx-y0);
+    var cury=cursory-x0;
+    var angle=1.5*Math.PI-Math.atan2(cury,curx);
+	var m=angle/2/Math.PI*steps[0];
+    var ms=smoothhill(Math.sqrt(Math.pow(curx,2)+Math.pow(cury,2))/sizle/(l[0]+l[1]+l[2])/1.5);
+    var now = new Date();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+    var milli = now.getMilliseconds();  
+    if (hour>=12){hour=hour-12};
+    var j=hour*steps[0]/r[0]+minute*steps[1]/r[1]+(second+milli/1000)*steps[2]/r[2];
+    var k=hour*steps[0]/r[0]+minute*steps[1]/r[1]+second*steps[2]/r[2];
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle ='rgb(0,0,0)';
+    ctx.fillRect(0, 0, c.width, c.height);
+    
+    ctx.beginPath();
+    ctx.strokeStyle =bg_lines;
+    ctx.lineWidth = '1';
+    ctx.shadowBlur = bg_blur;
+    ctx.shadowColor=bg_shade;
+    for (i=j;i<steps[0]+1;i+=1) {
+	    var h_c=closeness(r[0],i/steps[1],m/steps[1]); 
+        var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c/line_width_heartbeat));
+        angles[0]=s2[0]*i/steps[0]*2*Math.PI;
+        angles[1]=s2[1]*i/steps[1]*2*Math.PI;
+        angles[2]=s2[2]*i/steps[2]*2*Math.PI;
+        x=x0-sizler*(l[0]*Math.cos(angles[0])+l[1]*Math.cos(angles[1])+l[2]*Math.cos(angles[2]));
+        y=y0+sizler*(l[0]*Math.sin(angles[0])+l[1]*Math.sin(angles[1])+l[2]*Math.sin(angles[2]));
+        ctx.lineTo(y,x);
+    }
+    var i=steps[0]+1;
+    angles[0]=s2[0]*i/steps[0]*2*Math.PI;
+    angles[1]=s2[1]*i/steps[1]*2*Math.PI;
+    angles[2]=s2[2]*i/steps[2]*2*Math.PI;
+	var h_c=closeness(r[0],i/steps[1],m/steps[1]); 
+        var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c/line_width_heartbeat));
+    x=x0-sizler*(l[0]*Math.cos(angles[0])+l[1]*Math.cos(angles[1])+l[2]*Math.cos(angles[2]));
+    y=y0+sizler*(l[0]*Math.sin(angles[0])+l[1]*Math.sin(angles[1])+l[2]*Math.sin(angles[2]));
+    ctx.lineTo(y,x);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.strokeStyle=main_lines;
+    ctx.lineWidth='1';
+    ctx.shadowBlur=main_blur;
+    ctx.shadowColor=main_shade;
+    for (i=0;i<j;i+=1) {
+        angles[0]=s2[0]*i/steps[0]*2*Math.PI;
+        angles[1]=s2[1]*i/steps[1]*2*Math.PI;
+        angles[2]=s2[2]*i/steps[2]*2*Math.PI;
+        var h_c=closeness(r[0],i/steps[1],m/steps[1]); 
+        var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c/line_width_heartbeat));
+        x=x0-sizler*(l[0]*Math.cos(angles[0])+l[1]*Math.cos(angles[1])+l[2]*Math.cos(angles[2]));
+        y=y0+sizler*(l[0]*Math.sin(angles[0])+l[1]*Math.sin(angles[1])+l[2]*Math.sin(angles[2]));
+        ctx.lineTo(y,x);
+    }
+    var i=j;
+    var h_c=closeness(r[0],i/steps[1],m/steps[1]); 
+    var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c/line_width_heartbeat));
+    angles[0]=s2[0]*i/steps[0]*2*Math.PI;
+    angles[1]=s2[1]*i/steps[1]*2*Math.PI;
+    angles[2]=s2[2]*i/steps[2]*2*Math.PI;
+    x=x0-sizler*(l[0]*Math.cos(angles[0])+l[1]*Math.cos(angles[1])+l[2]*Math.cos(angles[2]));
+    y=y0+sizler*(l[0]*Math.sin(angles[0])+l[1]*Math.sin(angles[1])+l[2]*Math.sin(angles[2]));
+    ctx.lineTo(y,x);
+    ctx.stroke();
+    
+}
+
+function drawNumbers(c,cursorx,cursory,ctx,r,x0,y0,sizle,s2,steps,x,y,hour_factor,minute_factor,text_base,text_shade,text_blur,text_blur_small,text_heartbeat,width_heartbeat,line_heartbeat,line_width_heartbeat) {
+    var curx=-(cursorx-y0);
+    var cury=cursory-x0;
+    var angle=1.5*Math.PI-Math.atan2(cury,curx)+Math.PI;
+    var m=(angle-Math.PI)/2/Math.PI*r[0];
+    var ms=smoothhill(Math.sqrt(Math.pow(curx,2)+Math.pow(cury,2))/sizle/(l[0]+l[1]+l[2])/1.5);
+    
+    //hours
+    var now = new Date();
+    var hour = now.getHours();
+    var min = now.getMinutes();
+    var second = now.getSeconds();
+    var milli = now.getMilliseconds();  
+    
+    if (hour>=12){hour=hour-12};
+	var k=hour+min/r[1]+second/r[2]/r[1];
+    var ang;
+    var ang1;
+    var ang2;
+    
+    ctx.fillStyle = text_base;
+    ctx.shadowBlur = text_blur;
+    ctx.shadowColor = text_shade;
+    for(i=1;i<13;i+=1){
+      var h_c=closeness(r[0],i,k); 
+      var h_c2=closeness(r[0],i,m); 
+      var fnt_size1=sizle*((1+text_heartbeat)*smoothstep(1-h_c/width_heartbeat))*hour_factor; 
+      var fnt_size2=sizle*((1+text_heartbeat)*ms/3*2*smoothstep(1-h_c2/width_heartbeat))*hour_factor; 
+	var fnt_size=Math.max(fnt_size1,fnt_size2);
+      var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c2/line_width_heartbeat));
+      ang =i*Math.PI*2/r[0];
+      x=x0-sizler*1.07*Math.cos(ang)*(l[0]+l[1]+l[2]);
+      y=y0+sizler*1.07*Math.sin(ang)*(l[0]+l[1]+l[2]);
+
+      this.ctx.save();
+      this.ctx.font = fnt_size + "px arial";
+      this.ctx.translate(y, x);
+      this.ctx.textAlign = "center"; 
+      this.ctx.translate(0,0);
+      this.ctx.rotate(Math.PI*2/r[0]*i);
+      this.ctx.fillText(i.toString(),0,0);
+      this.ctx.restore();
+    }
+    
+    //minutes
+    
+    ctx.fillStyle = text_base;
+    ctx.shadowBlur = text_blur_small;
+    ctx.shadowColor = text_shade;
+    var k=min+(second+milli/1000)/r[2];
+    var k2=hour+min/r[1]+second/r[2]/r[1];
+    for(i=0;i<60*(12)-4;i+=5){
+	var j=hour*steps[0]/r[0]+i*steps[1]/r[1];
+        var h_c=Math.abs((j/steps[0]*r[0]-k2)*r[1]); 
+        var h_c2=closeness(r[0],hour+i/r[1],m)*r[1];
+	var f_s1=sizle*(1+text_heartbeat*Math.pow(smoothstep(1-h_c/width_heartbeat),2))*(1-smoothstep(h_c/width_heartbeat/5,1))*minute_factor;
+	var f_s2=sizle*(1+text_heartbeat*Math.pow(smoothstep(1-h_c/width_heartbeat),2))*ms/3*2*(1-smoothstep(h_c2/width_heartbeat/5,1))*minute_factor; 
+	var f_s=Math.max(f_s1,f_s2);
+        if (f_s>0.0001) {
+            ang1=s2[0]*j/steps[0]*2*Math.PI;
+            ang2=s2[1]*j/steps[1]*2*Math.PI;
+      	
+      	    var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c2/r[1]/line_width_heartbeat));
+            x=x0-sizler*(Math.cos(ang1)*l[0]+1.05*(Math.cos(ang2)*l[1]+Math.cos(ang2)*l[2]));
+            y=y0+sizler*(Math.sin(ang1)*l[0]+1.05*(Math.sin(ang2)*l[1]+Math.sin(ang2)*l[2]));
+	
+	
+            this.ctx.save();
+	    this.ctx.font = f_s + "px arial";
+            this.ctx.translate(y, x);
+            this.ctx.textAlign = "center"; 
+            this.ctx.translate(0,0);
+            this.ctx.rotate(ang2);
+            var mn=(i+60*12)%60;
+            this.ctx.fillText(mn.toString(),0,0);
+            this.ctx.restore();
+	}
+    }
+}
+
+function drawTime(c,cursorx,cursory,ctx,angles,x0,y0,x,y,sizle,l,s2,hand,hand_shade,hand_blur,hand_thickness,line_heartbeat,line_width_heartbeat){
+    var curx=-(cursorx-y0);
+    var cury=cursory-x0;
+    var angle=1.5*Math.PI-Math.atan2(cury,curx)+Math.PI;
+	var m=(angle-Math.PI)/2/Math.PI*r[0];
+    var ms=smoothhill(Math.sqrt(Math.pow(curx,2)+Math.pow(cury,2))/sizle/(l[0]+l[1]+l[2])/1.5);
+    
+    var now = new Date();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+    var milli = now.getMilliseconds();  
+    var i=hour*steps[0]/r[0]+minute*steps[1]/r[1]+(second+milli/1000)*steps[2]/r[2];
+    
+    var h_c2=closeness(r[0],i*r[0]/steps[0],m);
+    var sizler=sizle*(1+ms*line_heartbeat*smoothstep(1-h_c2/line_width_heartbeat));
+        
+    angles[0]=s2[0]*i/steps[0]*2*Math.PI;
+    angles[1]=s2[1]*i/steps[1]*2*Math.PI;
+    angles[2]=s2[2]*i/steps[2]*2*Math.PI;
+    //hour
+    x=x0;
+    y=y0;
+    angles[0]=i/steps[0]*2*Math.PI;
+    ctx.beginPath();
+    ctx.strokeStyle = hand;
+    ctx.shadowBlur = hand_blur;
+    ctx.shadowColor = hand_shade;
+    ctx.lineWidth = hand_thickness;
+    ctx.lineTo(y,x);
+    x=x-sizler*l[0]*Math.cos(angles[0]);
+    y=y+sizler*l[0]*Math.sin(angles[0]);
+    ctx.lineTo(y,x);
+    ctx.stroke();
+    //minute
+    ctx.beginPath();
+	ctx.strokeStyle = 'rgb(250,250,250)';
+    ctx.shadowBlur = 20;
+	ctx.shadowColor = 'rgb(0,0,250)';
+    ctx.lineWidth = '2.5';
+    ctx.lineTo(y,x);
+    x=x-sizler*l[1]*Math.cos(angles[1]);
+    y=y+sizler*l[1]*Math.sin(angles[1]);
+    ctx.lineTo(y,x);
+    ctx.stroke();
+    // second
+    ctx.beginPath();
+    ctx.strokeStyle = hand;
+    ctx.shadowBlur = hand_blur;
+    ctx.shadowColor = hand_shade;
+    ctx.lineWidth = hand_thickness;
+    ctx.lineTo(y,x);
+    x=x-sizler*l[2]*Math.cos(angles[2]);
+    y=y+sizler*l[2]*Math.sin(angles[2]);
+    ctx.lineTo(y,x);
+    ctx.stroke();
+}
+
+function smoothstep(x) {
+    var a=0;
+    if (x<0){
+        a=0;
+    } else if (x>1){
+	a=1;
+    } else {
+	a=0.5*(1-Math.cos(x*Math.PI));
+    }
+    return a;
+}
+
+function smoothhill(x) {
+    var a=0;
+    if (x<0){
+        a=0;
+    } else if (x>1){
+	a=0;
+    } else {
+	a=0.5*(1-Math.cos(x*2*Math.PI));
+    }
+    return a;
+}
+
+function closeness(n,i,x) {
+    var a=Math.abs(i-x);
+    var b=Math.abs(i-x-n);
+    var c=Math.abs(i-x+n);
+    var d=Math.min(a,b);
+    d=Math.min(c,d);
+    if (d>n) {
+	d=d%n;
+	}
+    return d; 
+}
+
+</script> 
+</body>
+</html>
