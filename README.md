@@ -18,7 +18,7 @@ There are two .html programs in the repository, one that reacts to the presence 
 </p>
 
 <p align="center">
-<img src="https://github.com/Ntropic/Stacked_Clock/blob/master/Images/6oclock.png?raw=true" width="540" height="540" />
+<img src="https://github.com/Ntropic/Stacked_Clock/blob/master/Images/20_38.png?raw=true" width="540" height="540" />
 </p>
 <p align="center"> 
 20:38 
