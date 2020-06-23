@@ -23,3 +23,11 @@ There are two .html programs in the repository, one that reacts to the presence 
 <p align="center"> 
 20:38 
 </p>
+
+* The Alternative Clock
+<p align="center">
+<img src="https://github.com/Ntropic/Stacked_Clock/blob/master/Alternative/alternative_clock_preview.png?raw=true" width="540" height="540" />
+</p>
+<p align="center"> 
+An alternative clock, constructed using the time system (17,7,9,13,5).
+</p>
